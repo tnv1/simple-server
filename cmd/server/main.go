@@ -2,12 +2,18 @@ package main
 
 import (
 	"crypto/rand"
+	"fmt"
 	"log/slog"
 	"math/big"
 	"net/http"
 	"sync"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	// Maximum attempts to find a unique number
+	maxAttempts = 1000
 )
 
 type idgenState struct {
@@ -18,7 +24,7 @@ type idgenState struct {
 }
 
 func (s *idgenState) nextId() (*big.Int, error) {
-	for {
+	for attempts := 0; attempts < maxAttempts; attempts++ {
 		id, err := s.idgenFunc()
 		if err != nil {
 			return nil, err
@@ -31,6 +37,7 @@ func (s *idgenState) nextId() (*big.Int, error) {
 		}
 		s.mu.Unlock()
 	}
+	return nil, fmt.Errorf("failed to generate an unique id after %d attempts", maxAttempts)
 }
 
 type Server struct {
